@@ -1,7 +1,7 @@
 # OPTEE_TermProject
-<h2>encrypt<h2>
- <p>TEEencrypt -e [filename.txt] [Ceaser or RSA]</p>
+encrypt
+TEEencrypt -e [filename.txt] [Ceaser or RSA]
   
- <h2>decrypt<h2>
- <p>TEEencrypt -d [filename.txt] [key.txt]</p>
+decrypt
+TEEencrypt -d [filename.txt] [key.txt]
   
