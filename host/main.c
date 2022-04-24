@@ -179,6 +179,8 @@ int main(int argc, char *argv[])
 		fprintf(dfile, detext);
 		fclose(dfile);
 	
+	}else{
+		printf("please check the command\n");
 	}
 	
 	
