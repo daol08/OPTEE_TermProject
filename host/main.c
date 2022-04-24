@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
 	TEEC_Operation op;
 	TEEC_UUID uuid = TA_TEEencrypt_UUID;
 	uint32_t err_origin;
-	char rsa_text[86] ={0,};
-	char rsa_ci[1024/8] ={0,};
+	char rsa_text[MAX_PLAIN_LEN_1024] ={0,};
+	char rsa_ci[RSA_CIPHER_LEN_1024] ={0,};
 	char text[1024] = {0,};
 	char ciphertext[1024] = {0,};
 	char detext[1024] = {0,};
@@ -72,9 +72,9 @@ int main(int argc, char *argv[])
 	op.params[0].tmpref.size = len;
 	op.params[1].value.a = 1;
 	op.params[3].tmpref.buffer = rsa_text;
-	op.params[3].tmpref.size = 86;
+	op.params[3].tmpref.size = MAX_PLAIN_LEN_1024;
 	op.params[2].tmpref.buffer = rsa_ci;
-	op.params[2].tmpref.size = (1024/8);
+	op.params[2].tmpref.size = RSA_CIPHER_LEN_1024;
 
 	if(argc==4 && strcmp(argv[1], opmenu[0])==0){
 		//file make
@@ -91,23 +91,27 @@ int main(int argc, char *argv[])
 		
 		
 		if(strcmp(argv[3],opmenu[2])==0){
-			memcpy(rsa_text,text,86);
-			memcpy(op.params[3].tmpref.buffer,rsa_text,86);
+			//RSA
+			//write memory
+			memcpy(rsa_text,text,MAX_PLAIN_LEN_1024);
+			memcpy(op.params[3].tmpref.buffer,rsa_text,MAX_PLAIN_LEN_1024);
+			//tee invoke to make key
 			res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_RSA_key, &op,
 								 &err_origin);
 			if (res != TEEC_SUCCESS)
 			errx(1, "TEEC_InvokeCommand failed with code 0x%x origin 0x%x",
 				res, err_origin);
 
-
+			//tee invoke to encrypt
 			res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_RSA, &op,
 								 &err_origin);
 			if (res != TEEC_SUCCESS)
 			errx(1, "TEEC_InvokeCommand failed with code 0x%x origin 0x%x",
 				res, err_origin);
-			memcpy(rsa_ci, op.params[2].tmpref.buffer, (1024/8));
+			// read ciphered text
+			memcpy(rsa_ci, op.params[2].tmpref.buffer, RSA_CIPHER_LEN_1024);
 
-		
+			
 			//encrypted file create
 			FILE* encryptedfile = fopen("encrypted.txt","w");
 			fprintf(encryptedfile, rsa_ci);
@@ -115,14 +119,16 @@ int main(int argc, char *argv[])
 			printf("encrypted.txt\n");
 					
 		}else if(strcmp(argv[3],opmenu[3])==0){
-
+			//ceaser al
+			//write text to memory
 			memcpy(op.params[0].tmpref.buffer,text,len);
+			//tee invoke to encrypt
 			res = TEEC_InvokeCommand(&sess, TA_TEEencrypt_Ceaser_en, &op,
 								 &err_origin);
 			if (res != TEEC_SUCCESS)
 			errx(1, "TEEC_InvokeCommand failed with code 0x%x origin 0x%x",
 				res, err_origin);
-					
+			//read ciphered text 
 			memcpy(ciphertext, op.params[0].tmpref.buffer, len);
 
 		
@@ -140,8 +146,9 @@ int main(int argc, char *argv[])
 
 	}
 	else if(argc==4 && strcmp(argv[1],opmenu[1])==0){
+		//decrypte
 		int key;
-		//file check
+		//chipered text file check
 		FILE* pfile = fopen(argv[2],"r");
 		if(pfile == NULL){
 			printf("no file");
@@ -166,7 +173,7 @@ int main(int argc, char *argv[])
 				res, err_origin);
 		
 		memcpy(detext, op.params[0].tmpref.buffer, len);
-		printf("after decrypt,,, : %s\n", detext);
+		printf("decrypted.txt");
 		//file make
 		FILE* dfile = fopen("decrypted.txt", "w");
 		fprintf(dfile, detext);
